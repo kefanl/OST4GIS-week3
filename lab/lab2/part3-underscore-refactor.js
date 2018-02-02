@@ -32,79 +32,76 @@
 
 
   // clean data
-  for (var i = 0; i < schools.length - 1; i++) {
-    // If we have '19104 - 1234', splitting and taking the first (0th) element
-    // as an integer should yield a zip in the format above
-    if (typeof schools[i].ZIPCODE === 'string') {
-      split = schools[i].ZIPCODE.split(' ');
-      normalized_zip = parseInt(split[0]);
-      schools[i].ZIPCODE = normalized_zip;
-    }
-
-    // Check out the use of typeof here — this was not a contrived example.
-    // Someone actually messed up the data entry
-    if (typeof schools[i].GRADE_ORG === 'number') {  // if number
-      schools[i].HAS_KINDERGARTEN = schools[i].GRADE_LEVEL < 1;
-      schools[i].HAS_ELEMENTARY = 1 < schools[i].GRADE_LEVEL < 6;
-      schools[i].HAS_MIDDLE_SCHOOL = 5 < schools[i].GRADE_LEVEL < 9;
-      schools[i].HAS_HIGH_SCHOOL = 8 < schools[i].GRADE_LEVEL < 13;
-    } else {  // otherwise (in case of string)
-      schools[i].HAS_KINDERGARTEN = schools[i].GRADE_LEVEL.toUpperCase().indexOf('K') >= 0;
-      schools[i].HAS_ELEMENTARY = schools[i].GRADE_LEVEL.toUpperCase().indexOf('ELEM') >= 0;
-      schools[i].HAS_MIDDLE_SCHOOL = schools[i].GRADE_LEVEL.toUpperCase().indexOf('MID') >= 0;
-      schools[i].HAS_HIGH_SCHOOL = schools[i].GRADE_LEVEL.toUpperCase().indexOf('HIGH') >= 0;
-    }
+_.forEach(schools,function(sch){
+  if (typeof sch.ZIPCODE === 'string') {
+    split = sch.ZIPCODE.split(' ');
+    normalized_zip = parseInt(split[0]);
+    sch.ZIPCODE = normalized_zip;
   }
+  if (typeof sch.GRADE_ORG === 'number') {  // if number
+    sch.HAS_KINDERGARTEN = sch.GRADE_LEVEL < 1;
+    sch.HAS_ELEMENTARY = 1 < sch.GRADE_LEVEL < 6;
+    sch.HAS_MIDDLE_SCHOOL = 5 < sch.GRADE_LEVEL < 9;
+    sch.HAS_HIGH_SCHOOL = 8 < sch.GRADE_LEVEL < 13;
+  } else {  // otherwise (in case of string)
+    sch.HAS_KINDERGARTEN = sch.GRADE_LEVEL.toUpperCase().indexOf('K') >= 0;
+    sch.HAS_ELEMENTARY = sch.GRADE_LEVEL.toUpperCase().indexOf('ELEM') >= 0;
+    sch.HAS_MIDDLE_SCHOOL = sch.GRADE_LEVEL.toUpperCase().indexOf('MID') >= 0;
+    sch.HAS_HIGH_SCHOOL = sch.GRADE_LEVEL.toUpperCase().indexOf('HIGH') >= 0;
+  }
+  return sch
+})
 
   // filter data
   var filtered_data = [];
   var filtered_out = [];
-  for (var i = 0; i < schools.length - 1; i++) {
-    isOpen = schools[i].ACTIVE.toUpperCase() == 'OPEN';
-    isPublic = (schools[i].TYPE.toUpperCase() !== 'CHARTER' ||
-                schools[i].TYPE.toUpperCase() !== 'PRIVATE');
-    isSchool = (schools[i].HAS_KINDERGARTEN ||
-                schools[i].HAS_ELEMENTARY ||
-                schools[i].HAS_MIDDLE_SCHOOL ||
-                schools[i].HAS_HIGH_SCHOOL);
-    meetsMinimumEnrollment = schools[i].ENROLLMENT > minEnrollment;
-    meetsZipCondition = acceptedZipcodes.indexOf(schools[i].ZIPCODE) >= 0;
+_.forEach(schools,function(sch){
+    isOpen = sch.ACTIVE.toUpperCase() == 'OPEN';
+    isPublic = (sch.TYPE.toUpperCase() !== 'CHARTER' ||
+                sch.TYPE.toUpperCase() !== 'PRIVATE');
+    isSchool = (sch.HAS_KINDERGARTEN ||
+                sch.HAS_ELEMENTARY ||
+                sch.HAS_MIDDLE_SCHOOL ||
+                sch.HAS_HIGH_SCHOOL);
+    meetsMinimumEnrollment = sch.ENROLLMENT > minEnrollment;
+    meetsZipCondition = acceptedZipcodes.indexOf(sch.ZIPCODE) >= 0;
     filter_condition = (isOpen &&
                         isSchool &&
                         meetsMinimumEnrollment &&
                         !meetsZipCondition);
 
     if (filter_condition) {
-      filtered_data.push(schools[i]);
+      filtered_data.push(sch);
     } else {
-      filtered_out.push(schools[i]);
+      filtered_out.push(sch);
     }
-  }
+  })
   console.log('Included:', filtered_data.length);
   console.log('Excluded:', filtered_out.length);
 
   // main loop
   var color;
-  for (var i = 0; i < filtered_data.length - 1; i++) {
-    isOpen = filtered_data[i].ACTIVE.toUpperCase() == 'OPEN';
-    isPublic = (filtered_data[i].TYPE.toUpperCase() !== 'CHARTER' ||
-                filtered_data[i].TYPE.toUpperCase() !== 'PRIVATE');
-    meetsMinimumEnrollment = filtered_data[i].ENROLLMENT > minEnrollment;
+  _.forEach(filtered_data,function(sch){
+    isOpen = sch.ACTIVE.toUpperCase() == 'OPEN';
+    isPublic = (sch.TYPE.toUpperCase() !== 'CHARTER' ||
+                sch.TYPE.toUpperCase() !== 'PRIVATE');
+    meetsMinimumEnrollment = sch.ENROLLMENT > minEnrollment;
 
     // Constructing the styling  options for our map
-    if (filtered_data[i].HAS_HIGH_SCHOOL){
+    if (sch.HAS_HIGH_SCHOOL){
       color = '#0000FF';
-    } else if (filtered_data[i].HAS_MIDDLE_SCHOOL) {
+    } else if (sch.HAS_MIDDLE_SCHOOL) {
       color = '#00FF00';
     } else {
       color = '##FF0000';
     }
     // The style options
-    var pathOpts = {'radius': filtered_data[i].ENROLLMENT / 30,
+    var pathOpts = {'radius': sch.ENROLLMENT / 30,
                     'fillColor': color};
-    L.circleMarker([filtered_data[i].Y, filtered_data[i].X], pathOpts)
-      .bindPopup(filtered_data[i].FACILNAME_LABEL)
+    L.circleMarker([sch.Y, sch.X], pathOpts)
+      .bindPopup(sch.FACILNAME_LABEL)
       .addTo(map);
-  }
+  })
+
 
 })();
